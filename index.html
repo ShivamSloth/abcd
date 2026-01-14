@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400&family=Montserrat:wght@100;300;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #d4af37;
+            --bg-dark: #0a0a0b;
+            --text-main: #fcfaf1;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(212, 175, 55, 0.2);
+            --gold-glow: 0 0 15px rgba(212, 175, 55, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body, html {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        body.no-scroll { overflow: hidden; }
+
+        /* --- BACKGROUND CANVAS --- */
+        #canvas-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a1a1d 0%, #050505 100%);
+            transition: filter 1s ease;
+        }
+        body.overlay-active #canvas-bg { filter: blur(8px) brightness(0.6); }
+
+        /* --- PAGE 1: STORY SCROLL --- */
+        .story-container { position: relative; z-index: 10; transition: opacity 1s; }
+        .story-container.hidden { opacity: 0; pointer-events: none; }
+
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10vw;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        section.visible { opacity: 1; transform: translateY(0); }
+
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 300;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-style: italic;
+            text-shadow: var(--gold-glow);
+        }
+
+        .text-reveal {
+            max-width: 700px;
+            line-height: 2;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            font-weight: 300;
+            color: rgba(252, 250, 241, 0.8);
+        }
+
+        .highlight { color: var(--primary); font-weight: 600; }
+        .divider { width: 1px; height: 80px; background: linear-gradient(var(--primary), transparent); margin: 30px 0; }
+
+        .gift-trigger {
+            background: none;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 15px 40px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: 0.4s;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .gift-trigger:hover { background: var(--primary); color: black; box-shadow: 0 0 25px var(--primary); }
+
+        /* --- OVERLAY SECTIONS --- */
+        #video-section, #epilogue-section {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        #video-section.active, #epilogue-section.active { display: flex; animation: fadeIn 0.8s forwards; }
+
+        /* Optimized Container for Larger Videos */
+.glass-card {
+    width: 95%; /* Increased from 90% */
+    max-width: 500px; /* Wider limit for desktop/large phones */
+    height: 90vh; /* Taller card */
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    padding: 15px; /* Reduced padding to give videos more room */
+    overflow-y: auto;
+    scrollbar-width: none;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.video-block {
+    width: 100%;
+    /* Use 9/16 for vertical reels or 1/1 for square. 
+       16/9 is for horizontal. I recommend 4/5 for a "Big" look */
+    aspect-ratio: 4 / 5; 
+    margin-bottom: 20px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+    flex-shrink: 0; /* Prevents squashing */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.video-block video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* This makes the video fill the entire block */
+    display: block;
+}
+
+        /* --- EPILOGUE PLAYER UI --- */
+        .ep-stage {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 5; /* Portrait photo ratio */
+            margin-bottom: 20px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .ep-image-layer {
+            position: absolute;
+            inset: 0;
+            transition: opacity 1s ease, transform 1s ease;
+        }
+        .ep-image-layer img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+        
+        /* State: When playing, hide image */
+        .ep-stage.playing .ep-image-layer { opacity: 0; transform: scale(1.05); }
+
+        .ep-text-layer {
+            position: absolute;
+            inset: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            overflow-y: auto;
+        }
+        /* State: When playing, show text */
+       /* New code: Image stays visible but dims slightly for readability */
+/* Image stays fully visible and clear when playing */
+.ep-stage.playing .ep-image-layer { 
+    opacity: 1; 
+    transform: scale(1.02); /* Very subtle zoom just to show it's active */
+    transition: transform 3s ease;
+}
+
+        .ep-poem span {
+            display: block;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: 0.8s ease;
+        }
+        .ep-poem span.visible { opacity: 1; transform: translateY(0); }
+
+        /* --- CONTROLS --- */
+        .player-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 10px;
+        }
+
+        .play-wrapper {
+            position: relative;
+            width: 70px; height: 70px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .play-ring-bg {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid rgba(212,175,55,0.2);
+        }
+
+        .play-ring-progress {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid var(--primary);
+            clip-path: inset(0 100% 0 0);
+            transform: rotate(-90deg);
+            transition: clip-path 0.1s linear;
+        }
+
+        .play-btn-inner {
+            position: absolute; inset: 6px;
+            background: rgba(212,175,55,0.1);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary);
+            font-size: 1.2rem;
+            transition: 0.3s;
+        }
+        .play-wrapper:hover .play-btn-inner { background: var(--primary); color: #000; }
+
+        .wave-anim {
+            display: flex; gap: 4px; height: 20px; align-items: flex-end;
+            margin-bottom: 15px; opacity: 0; transition: 0.5s;
+        }
+        .wave-anim span { width: 3px; background: var(--primary); animation: wave 1s infinite; }
+        .wave-anim.active { opacity: 1; }
+        
+        @keyframes wave { 0%,100% { height: 5px; } 50% { height: 15px; } }
+        .wave-anim span:nth-child(2) { animation-delay: 0.1s; }
+        .wave-anim span:nth-child(3) { animation-delay: 0.2s; }
+
+        /* Back Button */
+        .back-btn {
+            background: none; border: 1px solid rgba(212,175,55,0.3);
+            color: var(--primary); padding: 8px 20px; border-radius: 20px;
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;
+            cursor: pointer; margin-top: auto; align-self: center;
+            transition: 0.3s;
+        }
+        .back-btn:hover { background: var(--primary); color: #000; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- CINEMATIC TRANSITION TO 345 --- */
+#transitionOverlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, rgba(212,175,55,0.25), #000 70%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+    transition: opacity 1.1s ease;
+}
+
+#transitionOverlay.active {
+    opacity: 1;
+}
+
+.gold-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(212,175,55,0.5), transparent 60%);
+    animation: flash 1.2s ease forwards;
+    opacity: 0;
+}
+
+#transitionOverlay.active .gold-flash {
+    opacity: 1;
+}
+
+@keyframes flash {
+    0% { transform: scale(0.9); opacity: 0; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1.2); opacity: 0; }
+}
+/* --- MINIMAL PAGE TRANSITION --- */
+.page {
+    transition:
+        opacity 0.4s ease,
+        transform 0.4s ease;
+}
+
+.page.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+/* --- SPOTIFY LINK (PAGE 3) --- */
+.spotify-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 25px auto;
+    padding: 14px 22px;
+    width: fit-content;
+    border-radius: 40px;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.spotify-link:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(29,185,84,0.35);
+}
+
+.spotify-icon {
+    font-size: 1.3rem;
+}
+
+.spotify-title {
+    color: #1DB954; /* Spotify green */
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.spotify-sub {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.75rem;
+}
+.gift-trigger {
+    position: relative;
+    z-index: 50;
+}
+/* --- SPOTIFY PREVIEW (PAGE 3) --- */
+.spotify-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin: 25px auto;
+}
+
+/* soft line on top */
+.soft-note {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    text-transform: uppercase;
+}
+
+/* card */
+.spotify-card {
+    width: 260px;
+    background: rgba(0,0,0,0.45);
+    border-radius: 16px;
+    padding: 16px;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.spotify-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 30px rgba(29,185,84,0.35);
+}
+
+/* cover image */
+.spotify-card img {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+/* text */
+.spotify-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+}
+
+.spotify-title {
+    color: #1DB954;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.spotify-open {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+}
+
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+
+<main class="story-container" id="main-story">
+    <section>
+        <h1>Happy Birthday...</h1>
+        <div class="text-reveal">
+            2025 had its own pace, its own chaos.<br>
+            <span class="highlight">You were the calm within it.</span><br><br>
+            You became a part of my daily life in the sweetest way.
+        </div>
+        <div class="divider"></div>
+        <p class="text-reveal" style="font-size:0.8rem; opacity:0.6;">Scroll down</p>
+    </section>
+
+    <section>
+        <h1>The Favorite Part.</h1>
+        <div class="text-reveal">
+            If I were an iceberg, I'd happily consider melting into an ocean... <br>
+            Just to show you the <span class="highlight">depth of my admiration</span>.
+        </div>
+        <div class="divider"></div>
+    </section>
+
+    <section>
+        <h1>Welcome to 2026.</h1>
+        <div class="text-reveal">
+            I hope you laugh louder and dream bigger.<br>
+            I’m really glad you’re here.
+        </div>
+        <button class="gift-trigger" onclick="igniteCelebration()">A Final Wish</button>
+    </section>
+</main>
+
+<div id="video-section">
+    <div class="glass-card">
+        <h2 style="text-align:center; color:var(--primary); font-family:'Cormorant Garamond'; margin: 15px 0;">
+            Memories
+        </h2>
+        
+        <div class="video-block">
+            <video src="Video-12.mp4" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div class="video-block">
+            <video src="Video-390.mp4" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div class="video-block">
+            <video src="Video-929.mp4" controls playsinline preload="metadata"></video>
+        </div>
+
+        <div style="padding: 10px 0; display: flex; flex-direction: column; gap: 10px;">
+            <button class="gift-trigger" style="width:100%;" onclick="showEpilogue()">Continue</button>
+            <button class="back-btn" onclick="backToStory()">Back</button>
+        </div>
+    </div>
+</div>
+
+<div id="epilogue-section">
+    <div class="glass-card">
+        
+        <div class="ep-stage" id="epStage">
+            <div class="ep-image-layer">
+                <img src="image.jpg" alt="Us">
+            </div>
+
+           
+        </div>
+
+    <div class="spotify-preview">
+
+    <p class="soft-note">From me(Tried my best hehe:) Hope you’ll like it.</p>
+
+    <a 
+        href="https://open.spotify.com/playlist/3rxgQXPjPmGoB66i57sqYZ?si=0TNBgqxNTKKJKF4GQty26g&pi=0cx_NX1GTNa7r"
+        target="_blank"
+        rel="noopener"
+        class="spotify-card"
+    >
+        <img src="image3.jpeg" alt="Spotify Playlist Cover">
+
+        <div class="spotify-meta">
+            <span class="spotify-title">Our Playlist</span>
+            <span class="spotify-open">Open in Spotify</span>
+        </div>
+    </a>
+
+</div>
+
+
+
+            <button class="back-btn" onclick="backToVideos()">Back</button>
+            <button class="gift-trigger" onclick="goTo345()">Open Final Page</button>
+
+        </div>
+
+    </div>
+</div>
+
+
+
+<script>
+    /* --- PARTICLES --- */
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let speedMult = 1;
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    
+    class P {
+        constructor() { this.reset(); }
+        reset() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.s = Math.random()*2; this.vx=(Math.random()-.5)*.5; this.vy=(Math.random()-.5)*.5; }
+        update() { this.x+=this.vx*speedMult; this.y+=this.vy*speedMult; if(this.x<0||this.x>canvas.width)this.vx*=-1; if(this.y<0||this.y>canvas.height)this.vy*=-1; }
+        draw() { ctx.fillStyle='rgba(212,175,55,0.3)'; ctx.beginPath(); ctx.arc(this.x,this.y,this.s,0,Math.PI*2); ctx.fill(); }
+    }
+    for(let i=0;i<80;i++) particles.push(new P());
+    function anim(){ ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{p.update();p.draw()}); requestAnimationFrame(anim); }
+    anim();
+
+    /* --- NAVIGATION & LOGIC --- */
+    const audio = document.getElementById('poemAudio');
+    const stage = document.getElementById('epStage');
+    const playIcon = document.getElementById('playIcon');
+    const wave = document.getElementById('waveAnim');
+    const progressRing = document.getElementById('progressRing');
+    const poemLines = document.querySelectorAll('.ep-poem span');
+    let isPlaying = false;
+
+    // SCROLL OBSERVER
+    const obs = new IntersectionObserver(e => e.forEach(en => { if(en.isIntersecting) en.target.classList.add('visible'); }), {threshold:0.3});
+    document.querySelectorAll('section').forEach(s => obs.observe(s));
+
+  function stopMedia() {
+    // stop videos safely
+    document.querySelectorAll('video').forEach(v => {
+        if (!v.paused) v.pause();
+        v.currentTime = 0;
+    });
+
+    // stop audio ONLY if it exists
+    if (typeof audio !== "undefined" && audio) {
+        audio.pause();
+        audio.currentTime = 0;
+    }
+
+    // reset UI safely
+    if (typeof resetPlayerUI === "function") {
+        resetPlayerUI();
+    }
+}
+
+
+    function resetPlayerUI() {
+    isPlaying = false;
+
+    if (playIcon) {
+        playIcon.innerText = "▶";
+    }
+
+    if (stage) {
+        stage.classList.remove('playing');
+    }
+
+    if (wave) {
+        wave.classList.remove('active');
+    }
+
+    if (progressRing) {
+        progressRing.style.clipPath = `inset(0 100% 0 0)`;
+    }
+
+    if (poemLines) {
+        poemLines.forEach(l => l.classList.remove('visible'));
+    }
+}
+
+
+    /* PAGE TRANSITIONS */
+    function igniteCelebration() {
+        stopMedia();
+        document.body.classList.add('no-scroll', 'overlay-active');
+        document.getElementById('main-story').classList.add('hidden');
+        document.getElementById('video-section').classList.add('active');
+        speedMult = 3;
+    }
+
+    function showEpilogue() {
+        stopMedia();
+        document.getElementById('video-section').classList.remove('active');
+        document.getElementById('epilogue-section').classList.add('active');
+        speedMult = 0.5;
+    }
+
+    function backToStory() {
+        stopMedia();
+        document.body.classList.remove('no-scroll', 'overlay-active');
+        document.getElementById('video-section').classList.remove('active');
+        document.getElementById('main-story').classList.remove('hidden');
+        speedMult = 1;
+    }
+
+    function backToVideos() {
+        stopMedia(); // Kills audio/animation immediately
+        document.getElementById('epilogue-section').classList.remove('active');
+        document.getElementById('video-section').classList.add('active');
+        speedMult = 3;
+    }
+
+    /* PLAYER LOGIC */
+    function togglePlay() {
+    if(audio.paused) {
+        // START PLAYING
+        audio.play();
+        isPlaying = true;
+        playIcon.innerText = "⏸";
+        stage.classList.add('playing'); 
+        wave.classList.add('active');
+        // No text animation logic here anymore
+    } else {
+        // PAUSE
+        audio.pause();
+        isPlaying = false;
+        playIcon.innerText = "▶";
+        wave.classList.remove('active');
+    }
+}
+function goTo345() {
+    document.body.classList.add('no-scroll');
+
+    const overlay = document.getElementById("transitionOverlay");
+    overlay.classList.add("active");
+
+    // Optional: slow particles if you want
+    if (typeof speedMult !== "undefined") speedMult = 0.2;
+
+    setTimeout(() => {
+        window.location.href = "345.html";
+    }, 1200);
+}
+// 🎬 Allow only one video to play at a time
+const allVideos = document.querySelectorAll('video');
+
+allVideos.forEach(video => {
+    video.addEventListener('play', () => {
+        allVideos.forEach(v => {
+            if (v !== video) {
+                v.pause();
+                v.currentTime = 0; // optional: restart others
+            }
+        });
+    });
+});
+
+
+</script>
+<div id="transitionOverlay">
+    <div class="gold-flash"></div>
+</div>
+
+</body>
+</html>

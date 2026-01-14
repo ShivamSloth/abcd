@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@200;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-1: #080808;
+            --accent: #ffffff;
+            --aura-1: rgba(212, 175, 55, 0.15);
+            --aura-2: rgba(90, 110, 255, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-1);
+            color: var(--accent);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* --- IMMERSIVE AURA BACKGROUND --- */
+        .aura-container {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            filter: blur(100px);
+            transition: all 1.5s ease;
+        }
+
+        .aura-blob {
+            position: absolute;
+            width: 80vw;
+            height: 80vw;
+            border-radius: 50%;
+            background: var(--aura-1);
+            top: -10%;
+            left: -10%;
+            animation: drift 20s infinite alternate;
+        }
+
+        .aura-blob-2 {
+            position: absolute;
+            width: 60vw;
+            height: 60vw;
+            border-radius: 50%;
+            background: var(--aura-2);
+            bottom: -10%;
+            right: -10%;
+            animation: drift 15s infinite alternate-reverse;
+        }
+
+        @keyframes drift {
+            from { transform: translate(0,0) scale(1); }
+            to { transform: translate(10%, 10%) scale(1.2); }
+        }
+
+        /* --- PAGE PROGRESS BAR --- */
+        .progress-nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .progress-step {
+            height: 3px;
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            transition: background 0.5s;
+        }
+
+        .progress-step.filled { background: var(--accent); }
+
+        /* --- FULL SCREEN SECTIONS --- */
+        .page {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            transform: translateY(20px);
+        }
+
+        .page.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(3rem, 10vw, 6rem);
+            text-transform: uppercase;
+            line-height: 0.9;
+            margin-bottom: 30px;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        .content-box {
+            max-width: 600px;
+            text-align: center;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            line-height: 1.6;
+            font-weight: 200;
+            opacity: 0.8;
+            overflow-y: auto;
+            padding: 20px;
+            max-height: 50vh;
+        }
+        
+        .content-box::-webkit-scrollbar { width: 0; }
+
+        /* --- MINIMAL BUTTON --- */
+        .action-btn {
+            margin-top: 50px;
+            background: var(--accent);
+            color: black;
+            border: none;
+            padding: 20px 40px;
+            font-family: 'Syne', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+            transition: 0.3s;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+            padding: 20px 60px;
+        }
+
+        /* --- DECORATIVE ELEMENTS --- */
+        .page-num {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            font-family: 'Syne', sans-serif;
+            font-size: 5rem;
+            opacity: 0.05;
+        }
+
+        /* Fireworks/Hearts logic */
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: shoot 1s ease-out forwards;
+        }
+
+        @keyframes shoot {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0) translate(var(--x), var(--y)); opacity: 0; }
+        }
+        /* --- CINEMATIC FADE OUT --- */
+#fadeOverlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9999;
+    transition: opacity 1.2s ease;
+}
+
+#fadeOverlay.active {
+    opacity: 1;
+}
+/* --- POEM PAGE --- */
+.poem-bg {
+    position: absolute;
+    inset: 0;
+    background: url("image2.jpg") center / cover no-repeat;
+    filter: blur(2px) brightness(0.45);
+    transform: scale(1.08);
+    z-index: 0;
+    background-position: center center;
+}
+
+.poem-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(0,0,0,0.4), rgba(0,0,0,0.85));
+    z-index: 1;
+}
+
+.poem-container {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+    max-height: 45vh;
+    overflow-y: auto;
+    padding: 30px;
+    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.25);
+    border-radius: 20px;
+    scroll-behavior: smooth;
+    text-align: center;
+}
+
+.poem-container::-webkit-scrollbar {
+    width: 0;
+}
+@media (max-width: 768px) {
+    .poem-container {
+        max-width: 90%;
+        max-height: 50vh;
+        padding: 20px;
+    }
+}
+@media (max-width: 768px) {
+    .poem-line {
+        font-size: 1.15rem;
+        line-height: 1.6;
+    }
+}
+@media (max-width: 768px) {
+    .play-circle {
+        width: 75px;
+        height: 75px;
+    }
+
+    .play-circle span {
+        font-size: 22px;
+    }
+}
+@media (max-width: 768px) {
+    .poem-bg {
+        background-size: cover;
+        background-position: center top;
+        filter: blur(12px) brightness(0.4);
+        transform: scale(1.15);
+    }
+}
+
+/* Lyrics style */
+.poem-line {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    line-height: 1.8;
+    margin: 18px 0;
+    color: rgba(255,255,255,0.35);
+    transition: color 0.4s ease, transform 0.4s ease;
+}
+
+/* Active line */
+.poem-line.active {
+    color: #d4af37;
+    transform: scale(1.06);
+}
+
+/* Past lines */
+.poem-line.past {
+    color: rgba(255,255,255,0.6);
+}
+
+/* Ensure controls are clickable */
+#page4 .action-btn {
+    position: relative;
+    z-index: 3;
+}
+
+/* --- SPOTIFY STYLE PLAYER --- */
+.spotify-player {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 30px;
+}
+
+/* Play button */
+.play-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: #d4af37;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 0 0 rgba(212,175,55,0.6);
+    animation: pulse 2s infinite;
+}
+
+.play-circle span {
+    font-size: 28px;
+    color: #000;
+    margin-left: 4px;
+}
+
+/* Pulse ring */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.6); }
+    70% { box-shadow: 0 0 0 18px rgba(212,175,55,0); }
+    100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+}
+
+/* Equalizer bars */
+.equalizer {
+    display: flex;
+    gap: 6px;
+    margin-top: 16px;
+    height: 22px;
+    opacity: 0.4;
+}
+
+.equalizer span {
+    width: 4px;
+    background: #d4af37;
+    height: 6px;
+    animation: bounce 1s infinite ease-in-out;
+    animation-play-state: paused;
+}
+
+.equalizer span:nth-child(1) { animation-delay: 0s; }
+.equalizer span:nth-child(2) { animation-delay: 0.15s; }
+.equalizer span:nth-child(3) { animation-delay: 0.3s; }
+.equalizer span:nth-child(4) { animation-delay: 0.45s; }
+
+@keyframes bounce {
+    0%, 100% { height: 6px; }
+    50% { height: 22px; }
+}
+
+/* Active playing state */
+.spotify-player.playing .equalizer span {
+    animation-play-state: running;
+    opacity: 1;
+}
+/* --- POEM CARD TRANSITION --- */
+
+
+/* poem content */
+.poem-content {
+    transition: opacity 1.5s ease;
+}
+
+/* final image layer */
+
+/* active state */
+
+/* Keep card alive */
+.poem-card {
+    position: relative;
+    width: min(90%, 420px);
+    max-height: 520px;
+
+    border-radius: 24px;
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+
+/* Fade ONLY the poem content */
+
+
+/* Fade final image in */
+
+
+.poem-card.show-final .poem-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.poem-card.show-final .poem-overlay {
+    opacity: 0;
+    transition: opacity 1.5s ease;
+}
+
+.poem-final-image {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s ease;
+    z-index: 5;
+}
+
+.poem-card.show-final .poem-final-image {
+    opacity: 1;
+    pointer-events: auto;
+}
+@media (max-width: 768px) {
+    .poem-card {
+        width: 92%;
+        max-height: 70vh;
+    }
+
+    .poem-container {
+        max-height: 40vh;
+    }
+}
+#page4 {
+    justify-content: center;
+    gap: 20px;
+}
+.poem-final-image img {
+    max-width: 85%;
+    max-height: 85%;
+    object-fit: contain;
+}
+
+
+    </style>
+</head>
+<body>
+
+<div class="progress-nav">
+    <div class="progress-step filled" id="step1"></div>
+    <div class="progress-step" id="step2"></div>
+    <div class="progress-step" id="step3"></div>
+    <div class="progress-step" id="step4"></div>
+</div>
+
+<div class="aura-container" id="aura">
+    <div class="aura-blob"></div>
+    <div class="aura-blob-2"></div>
+</div>
+
+<section id="page1" class="page active">
+    <span class="page-num">01</span>
+    <h1>2025<br>PAUSED.</h1>
+    <div class="content-box">
+        <p>2025 had its own pace, its own chaos, and its own quiet moments. It wasn’t just a year on the calendar, it was made of small moments, shared smiles, and gentle comfort—you found your way into it.</p>
+        <br>
+        <p>Somewhere in between all of that, you became a part of my daily life in the sweetest way, making certain days feel softer and certain moments worth remembering.</p>
+    </div>
+    <button class="action-btn" onclick="showPage(2)">Next Chapter</button>
+</section>
+
+<section id="page2" class="page">
+    <span class="page-num">02</span>
+    <h1>THE<br>HABIT.</h1>
+    <div class="content-box">
+        <p>Honestly, You were my favourite part since the beginning. But somewhere along the way, you just became my favourite habit.</p>
+        <br>
+        <p>The person I’d look forward to talking to, the one who could make a regular day feel lighter. I don't plan changing that. I blame you for making me obsessed with you.</p>
+    </div>
+    <button class="action-btn" onclick="showPage(3)">Keep Going</button>
+</section>
+
+<section id="page3" class="page">
+    <span class="page-num">03</span>
+    <h1>TRUE<br>NORTH.</h1>
+    <div class="content-box">
+        <p>No matter how things change or stay the same, you will always have me quietly rooting for you. Someone who smiles at your wins, and believes in you even on the days you doubt yourself.</p>
+        <br>
+        <p>And, secretly — okay, not so secretly — I admire and adore you deeply, and I always will. I’ll always be cheering for you — quietly, sincerely. Mi'Ladyyy.</p>
+    </div>
+    <button class="action-btn" onclick="showPage(4)">Begin 2026</button>
+</section>
+
+<section id="page4" class="page">
+    <span class="page-num">04</span>
+
+    <div class="poem-card">
+    <!-- Background image -->
+    <div class="poem-bg"></div>
+    <div class="poem-overlay"></div>
+
+    <div class="poem-content">
+    <!-- Lyrics container -->
+    <div class="poem-container" id="poemContainer">
+
+    <p class="poem-line" data-time="0">Main chand lafz hoon, tu chaand si kavita,</p>
+    <p class="poem-line" data-time="2.5">Main ek kora kaagaz, tu ek naami kitaab,</p>
+    <p class="poem-line" data-time="5">Main faqat ek sher, tu ek naayaab ghazal.</p>
+
+    <p class="poem-line" data-time="7.5">Main patjhad ke sookhe patton ka dher,</p>
+    <p class="poem-line" data-time="10">Tu bahaaron mein khilta gulaab,</p>
+    <p class="poem-line" data-time="12.5">Main maatr kaale-safed ka chitra hoon,</p>
+    <p class="poem-line" data-time="15">Aur tu ek rangeen kala.</p>
+
+    <p class="poem-line" data-time="17.5">Main jalta hua ek shehar,</p>
+    <p class="poem-line" data-time="20">Tu sitaaron bhara chamakta aasmaan,</p>
+    <p class="poem-line" data-time="22.5">Main December ki sard hawa,</p>
+    <p class="poem-line" data-time="25">Tu November ki dhoop ki garmāhat,</p>
+    <p class="poem-line" data-time="27.5">Main nadi kinaare pada patthar,</p>
+    <p class="poem-line" data-time="30">Tu jagmagaata Kohinoor samaan.</p>
+
+    <p class="poem-line" data-time="32.5">Main baarish ki barasti boondon mein ek,</p>
+    <p class="poem-line" data-time="35">Tu ek gehre saagar sa,</p>
+    <p class="poem-line" data-time="37.5">Main ek bhoola hua puraana kissa,</p>
+    <p class="poem-line" data-time="40">Tu har mehfil ki mashhoor kahaani,</p>
+    <p class="poem-line" data-time="42.5">Main daastaan-e-maut,</p>
+    <p class="poem-line" data-time="45">Tu mare hue ko hayaat sa,</p>
+    <p class="poem-line" data-time="47.5">Main zakhm se behta hua lahoo,</p>
+    <p class="poem-line" data-time="50">Tu zakhm mein marham samaan.</p>
+
+    </div>
+
+    <div class="spotify-player">
+
+    <div class="play-circle" id="playCircle" onclick="togglePoem()">
+        <span id="playIcon">▶</span>
+    </div>
+
+    <div class="equalizer" id="equalizer">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+<!-- FINAL IMAGE (hidden initially) -->
+    
+</div>
+    </div>
+    
+    <div class="poem-final-image" id="poemFinalImage">
+        <img src="image.jpg" alt="Final Memory">
+    </div>
+    </div>
+    <button class="action-btn" onclick="fadeTo123()">❤ Restart</button>
+    <audio id="poemAudio" src="ReelAudio-78789.mp3"></audio>
+
+</section>
+
+
+
+
+<script>
+    const colors = [
+        ['rgba(212, 175, 55, 0.15)', 'rgba(90, 110, 255, 0.15)'],
+        ['rgba(255, 100, 100, 0.15)', 'rgba(100, 255, 200, 0.15)'],
+        ['rgba(150, 100, 255, 0.15)', 'rgba(255, 200, 100, 0.15)'],
+        ['rgba(255, 255, 255, 0.2)', 'rgba(50, 50, 50, 0.2)']
+    ];
+
+    function showPage(num) {
+        // Update Progress Bar
+        document.querySelectorAll('.progress-step').forEach((step, idx) => {
+            step.classList.toggle('filled', idx < num);
+        });
+
+        // Update Aura Colors
+        const aura = document.getElementById('aura');
+        const blobs = aura.querySelectorAll('div');
+        blobs[0].style.background = colors[num-1][0];
+        blobs[1].style.background = colors[num-1][1];
+
+        // Switch Pages
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page' + num).classList.add('active');
+
+        if (num === 4) {
+            burstEffect();
+        }
+    }
+
+    function burstEffect() {
+        const page = document.getElementById('page4');
+        for (let i = 0; i < 30; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = '4px';
+            star.style.height = '4px';
+            star.style.left = '50%';
+            star.style.top = '50%';
+            
+            const x = (Math.random() - 0.5) * 1000 + 'px';
+            const y = (Math.random() - 0.5) * 1000 + 'px';
+            star.style.setProperty('--x', x);
+            star.style.setProperty('--y', y);
+            
+            page.appendChild(star);
+            setTimeout(() => star.remove(), 1000);
+        }
+    }
+    function fadeTo123() {
+    const fade = document.getElementById("fadeOverlay");
+    fade.classList.add("active");
+
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 1200); // matches CSS transition
+}
+const poemAudio = document.getElementById("poemAudio");
+const poemLines = document.querySelectorAll(".poem-line");
+const poemContainer = document.getElementById("poemContainer");
+
+
+
+const playIcon = document.getElementById("playIcon");
+const spotifyPlayer = document.querySelector(".spotify-player");
+
+function togglePoem() {
+    if (poemAudio.paused) {
+        poemAudio.play();
+        playIcon.textContent = "⏸";
+        spotifyPlayer.classList.add("playing");
+    } else {
+        poemAudio.pause();
+        playIcon.textContent = "▶";
+        spotifyPlayer.classList.remove("playing");
+    }
+}
+
+poemAudio.addEventListener("ended", () => {
+    console.log("POEM ENDED");
+
+    const poemCard = document.querySelector(".poem-card");
+    console.log("poemCard:", poemCard);
+
+    if (poemCard) {
+        poemCard.classList.add("show-final");
+    }
+});
+
+
+
+
+
+let lastActiveIndex = -1;
+
+poemAudio.addEventListener("timeupdate", () => {
+    const currentTime = poemAudio.currentTime;
+
+    poemLines.forEach((line, index) => {
+        const start = parseFloat(line.dataset.time);
+        const end = poemLines[index + 1]
+            ? parseFloat(poemLines[index + 1].dataset.time)
+            : Infinity;
+
+        if (currentTime >= start && currentTime < end) {
+            if (lastActiveIndex !== index) {
+                lastActiveIndex = index;
+
+                line.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
+
+            line.classList.add("active");
+            line.classList.remove("past");
+
+            for (let i = 0; i < index; i++) {
+                poemLines[i].classList.add("past");
+                poemLines[i].classList.remove("active");
+            }
+
+            for (let i = index + 1; i < poemLines.length; i++) {
+                poemLines[i].classList.remove("active", "past");
+            }
+        }
+    });
+});
+
+
+
+</script>
+<div id="fadeOverlay"></div>
+
+</body>
+</html>
