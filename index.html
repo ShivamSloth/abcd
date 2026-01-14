@@ -463,7 +463,40 @@
     letter-spacing: 2px;
 }
 
+
 #start-journey { display: none; } /* Hidden until last slide */
+
+/* --- HEART CELEBRATION --- */
+/* --- HEART CELEBRATION --- */
+.heart {
+    position: fixed;
+    top: 100vh; /* Start below screen */
+    color: #d4af37; /* Gold color to match your theme */
+    font-size: 24px;
+    user-select: none;
+    pointer-events: none;
+    z-index: 99999; /* Higher than everything else */
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+    animation: floatUp linear forwards;
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-120vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -763,25 +796,58 @@ function moveSlide() {
 }
 
 function enterSite() {
-    // Stop Page 0 Audio
+    // 1. Stop Intro Audio
     introAudio.pause();
     introAudio.currentTime = 0;
 
-    // Fade out Page 0
+    // 2. Trigger the Hearts!
+    createHearts();
+
+    // 3. Fade out Page 0
     document.getElementById('page-0').classList.add('fade-out');
     
-    // Enable scrolling for Page 1
+    // 4. Enable scrolling for Page 1
     document.body.classList.remove('no-scroll');
     
-    // Trigger any animations for the first section of Page 1
+    // 5. Make Page 1 content visible immediately
     const firstSection = document.querySelector('section');
     if (firstSection) firstSection.classList.add('visible');
+
+    // Optional: Make the background particles faster for a "sparkle" feel
+    speedMult = 4;
+    setTimeout(() => { speedMult = 1; }, 3000); 
 }
 
-// Ensure Page 0 starts with no scroll
-document.addEventListener('DOMContentLoaded', () => {
-    document.body.classList.add('no-scroll');
-});
+function createHearts() {
+    const heartIcons = ['❤', '♥', '❣', '♡'];
+    const count = 40; // Total hearts
+
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            heart.innerHTML = heartIcons[Math.floor(Math.random() * heartIcons.length)];
+            
+            // Random horizontal position
+            heart.style.left = Math.random() * 100 + "vw";
+            
+            // Random size
+            const size = Math.random() * 20 + 15;
+            heart.style.fontSize = size + "px";
+            
+            // Random speed (between 3 and 5 seconds)
+            const duration = Math.random() * 2 + 3;
+            heart.style.animationDuration = duration + "s";
+
+            document.body.appendChild(heart);
+
+            // Remove heart from DOM after it finishes floating
+            setTimeout(() => {
+                heart.remove();
+            }, duration * 1000);
+        }, i * 150); // This creates the "shower" effect by staggering them
+    }
+}
 
 </script>
 <div id="transitionOverlay">
