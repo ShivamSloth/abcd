@@ -405,11 +405,35 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
     opacity: 0;
-    pointer-events: none;   /* ✅ KEEP THIS */
+    pointer-events: none;
+
     transition: opacity 2s ease;
-    z-index: 5;
+    z-index: 4;
 }
+
+.poem-final-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 28px;
+}
+
+/* When poem ends */
+.poem-card.show-final .poem-final-image {
+    opacity: 1;
+}
+
+/* Fade poem + overlay only */
+.poem-card.show-final .poem-content {
+    opacity: 0;
+}
+
+.poem-card.show-final .poem-overlay {
+    opacity: 0;
+}
+
 
 
 
