@@ -402,10 +402,89 @@
     color: rgba(255,255,255,0.6);
 }
 
+/* --- PAGE 0: INTRO SLIDER --- */
+#page-0 {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 1s ease, visibility 1s;
+}
+
+#page-0.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.intro-slider {
+    position: relative;
+    width: 85vw;
+    max-width: 400px;
+    aspect-ratio: 4/5;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    border: 1px solid var(--glass-border);
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slide.active { opacity: 1; }
+
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slider-nav {
+    margin-top: 25px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+#next-btn, #start-journey {
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+}
+
+#start-journey { display: none; } /* Hidden until last slide */
     </style>
 </head>
 <body>
+<div id="page-0">
+    <audio id="intro-audio" loop>
+        <source src="Dagabaaz Re.mp3" type="audio/mpeg">
+    </audio>
 
+    <div class="intro-slider">
+        <div class="slide active"><img src="intro1.jpg" alt="1"></div>
+        <div class="slide"><img src="intro2.jpg" alt="2"></div>
+        <div class="slide"><img src="intro3.jpg" alt="3"></div>
+        <div class="slide"><img src="intro4.jpg" alt="4"></div>
+    </div>
+
+    <div class="slider-nav">
+        <button class="gift-trigger" id="next-btn" onclick="moveSlide()">Next</button>
+        <button class="gift-trigger" id="start-journey" onclick="enterSite()">Enter</button>
+    </div>
+    <p style="margin-top: 15px; font-size: 0.7rem; opacity: 0.5; letter-spacing: 1px;">TAP TO BEGIN THE STORY</p>
+</div>
 <canvas id="canvas-bg"></canvas>
 
 <main class="story-container" id="main-story">
@@ -659,7 +738,50 @@ allVideos.forEach(video => {
         });
     });
 });
+let currentSlide = 0;
+const slides = document.querySelectorAll('.slide');
+const nextBtn = document.getElementById('next-btn');
+const startBtn = document.getElementById('start-journey');
+const introAudio = document.getElementById('intro-audio');
 
+function moveSlide() {
+    // Start audio on first interaction (required by browsers)
+    if (introAudio.paused) introAudio.play();
+
+    slides[currentSlide].classList.remove('active');
+    currentSlide++;
+
+    if (currentSlide < slides.length) {
+        slides[currentSlide].classList.add('active');
+    }
+
+    // If we reach the last slide, swap buttons
+    if (currentSlide === slides.length - 1) {
+        nextBtn.style.display = 'none';
+        startBtn.style.display = 'block';
+    }
+}
+
+function enterSite() {
+    // Stop Page 0 Audio
+    introAudio.pause();
+    introAudio.currentTime = 0;
+
+    // Fade out Page 0
+    document.getElementById('page-0').classList.add('fade-out');
+    
+    // Enable scrolling for Page 1
+    document.body.classList.remove('no-scroll');
+    
+    // Trigger any animations for the first section of Page 1
+    const firstSection = document.querySelector('section');
+    if (firstSection) firstSection.classList.add('visible');
+}
+
+// Ensure Page 0 starts with no scroll
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.classList.add('no-scroll');
+});
 
 </script>
 <div id="transitionOverlay">
