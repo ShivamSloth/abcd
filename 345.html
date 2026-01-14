@@ -406,15 +406,14 @@
     align-items: center;
     justify-content: center;
     opacity: 0;
-    pointer-events: none;
+    pointer-events: none;   /* ✅ KEEP THIS */
     transition: opacity 2s ease;
     z-index: 5;
 }
 
-.poem-card.show-final .poem-final-image {
-    opacity: 1;
-    pointer-events: auto;
-}
+
+
+
 @media (max-width: 768px) {
     .poem-card {
         width: 92%;
@@ -474,6 +473,10 @@
   .play-circle {
     margin: 0 auto;
   }
+}
+#page4 .action-btn {
+    position: relative;
+    z-index: 20;
 }
 
 
