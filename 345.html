@@ -205,9 +205,9 @@
 .poem-container {
     position: relative;
     z-index: 2;
-    max-width: 600px;
-    max-height: 45vh;
-    overflow-y: auto;
+    width: 100;
+    max-height: 100;
+    overflow-y: hidden;
     padding: 30px;
     backdrop-filter: blur(6px);
     background: rgba(0,0,0,0.25);
@@ -286,6 +286,7 @@
     flex-direction: column;
     align-items: center;
     margin-top: 30px;
+    padding-bottom: 28px;
 }
 
 /* Play button */
@@ -353,6 +354,12 @@
 /* poem content */
 .poem-content {
     transition: opacity 1.5s ease;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 28px 24px;
 }
 
 /* final image layer */
@@ -361,18 +368,17 @@
 
 /* Keep card alive */
 .poem-card {
-    position: relative;
-    width: min(90%, 420px);
+    width: min(90vw, 420px);
+    height: 65vh;
     max-height: 520px;
-
-    border-radius: 24px;
-    overflow: hidden;
 
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: space-between;
+
+    border-radius: 28px;
 }
+
 
 
 
